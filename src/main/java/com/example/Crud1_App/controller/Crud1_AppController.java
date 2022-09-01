@@ -4,6 +4,7 @@ import org.json.simple.*;
 import org.apache.tomcat.util.json.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jackson.JsonObjectDeserializer;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,109 +28,55 @@ import java.util.TreeSet;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 
-import com.example.Crud1_App.model.fruit;
-import com.example.Crud1_App.dao.CityDao;
-import com.example.Crud1_App.model.CityModel;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 
 @RestController
 public class Crud1_AppController {
 	
 	@Autowired
-	public CityDao cityDao;
-	
-	@Autowired
 	EntityManager em;
 	
-	@RequestMapping(value="/test")
-	public String testMethod() {
-		return "Hello.. test API for crud1_App got run";
-	}
-	
-	@PostMapping("/savecity")
-	public String savecity(@RequestBody CityModel city) {
-		cityDao.save(city);
-		return "city saved : " + city.getId();
-	}
-
-	@GetMapping("/getcity")
-	public List<CityModel> getcity() {
-		return (List<CityModel>) cityDao.findAll();
-	}
-	
-	@GetMapping("/getcitybyid/{id}")
-	public Optional<CityModel> getcitybyid(@PathVariable("id") int id) {
-		return cityDao.findById(id);
-	}
-	
-	@GetMapping("/getcitybyCountryCode/{countrycode}")
-	public Optional<CityModel> getcitybyCountryCode(@PathVariable("countrycode") String countrycode) {
-		return cityDao.findBycountrycode(countrycode);
-	}
-	
-	
-	@PutMapping("/updatecity/{id}")
-	public String updatecity(@RequestBody CityModel city) {
-		cityDao.save(city);
-		return "city updated : " + city.getId();
-	}
-	
-	@DeleteMapping("/deletecity/{id}")
-	public String deletecity(@PathVariable("id") int id) {
-		cityDao.deleteById(id);
-		return "city deleted : " + id;
-	}
-	
-	@PostMapping("/JsonTest")
-	public JSONObject JsonTest(@RequestBody JSONObject jSONObject) {
-		jSONObject.put("address", "Waki");
-		jSONObject.put("name", "SJ");
-		return jSONObject;
-	}
-	
-	@PostMapping("/getSortedData")
-	public String getSortedData(@RequestBody List<fruit> fruits) {
-		List<fruit> obj = fruits;
-		
-		// HashMap created to put record in KEY,VALUES format.
-		TreeMap<Integer,fruit> hm = new TreeMap<Integer,fruit>();
-		
-		// puting all Values into HashMap 
-		for(int i=0;i<obj.size();i++) {
-			fruit obj1 = obj.get(i);
-				hm.put(obj1.getQuantity(),obj1);
-		}
-		
-		// Actual Descendign Sorting is Done Usign TreeMap.
-//		hm.descendingMap();
-		Map<Integer, fruit> map = new TreeMap<Integer,fruit>(hm).descendingMap();
-		
-		String sortedList = "";
-		for(fruit str : map.values()) {
-			sortedList = sortedList + " " + str;
-		}
-		
-		return sortedList;
-	}
-	
-	@GetMapping("/getAnyDataBySql/{pid}")
-	public String getAnyDataBySql(@PathVariable("pid") int pid) {
-		Query query = em.createNativeQuery("select * FROM city WHERE population >= ?1");
-		query.setParameter(1, pid);
-		List<Object> res = query.getResultList();
-	
-		String str1 = " ";
-		for(int i=0;i<res.size();i++) {
-//			Object[] obj = res.get(i);
-		}
-		
-		HashMap<String,CityModel> map1 = new HashMap<String,CityModel>();
-		CityModel cm = new CityModel();
-		
-		
-		HashMap<String,Integer> map2 = new HashMap<String,Integer>();
-		
-		
-		return str1.toString();
+	@GetMapping("/getCompanyDetails/{name}")
+	public String getCompanyDetails(@PathVariable("name") String name) throws JsonProcessingException {
+		String sqlString = "SELECT \r\n" + 
+				"	eims_ua_company.cid AS eims_ua_company_cid,\r\n" + 
+				"	eims_ua_company.name AS eims_ua_company_name,\r\n" + 
+				"	eims_ua_company.description AS eims_ua_company_description,\r\n" + 
+				"	eims_ua_company.website AS eims_ua_company_website,\r\n" + 
+				"	eims_ua_company.foundedyear AS eims_ua_company_foundedyear,\r\n" + 
+				"	eims_ua_company.logo AS eims_ua_company_logo,\r\n" + 
+				"	eims_ua_company.country AS eims_ua_company_country,\r\n" + 
+				"	eims_ua_company.flag AS eims_ua_company_flag,\r\n" + 
+				"	eims_ua_company.createddate AS eims_ua_company_createddate,\r\n" + 
+				"	\r\n" + 
+				"	eims_ua_technology.tid AS eims_ua_technology_tid,\r\n" + 
+				"	eims_ua_technology.cid AS eims_ua_technology_cid,\r\n" + 
+				"	eims_ua_technology.name AS eims_ua_technology_name,\r\n" + 
+				"	eims_ua_technology.description AS eims_ua_technology_description,\r\n" + 
+				"	eims_ua_technology.flag AS eims_ua_technology_flag,\r\n" + 
+				"	eims_ua_technology.createddate AS eims_ua_technology_createddate,\r\n" + 
+				"	\r\n" + 
+				"	eims_ua_technology_files.id AS eims_ua_technology_files_id,\r\n" + 
+				"	eims_ua_technology_files.tid AS eims_ua_technology_files_tid,\r\n" + 
+				"	eims_ua_technology_files.url AS eims_ua_technology_files_url,\r\n" + 
+				"	eims_ua_technology_files.type AS eims_ua_technology_files_type,\r\n" + 
+				"	eims_ua_technology_files.flag AS eims_ua_technology_files_flag,\r\n" + 
+				"	eims_ua_technology_files.createddate AS eims_ua_technology_files_createddate\r\n" + 
+				"FROM \r\n" + 
+				"	eims_ua_company\r\n" + 
+				"	INNER JOIN eims_ua_technology ON \r\n" + 
+				"	eims_ua_company.cid = eims_ua_technology.cid\r\n" + 
+				"	INNER JOIN eims_ua_technology_files ON \r\n" + 
+				"	eims_ua_technology.tid = eims_ua_technology_files.tid\r\n" + 
+				"WHERE \r\n" + 
+				"	eims_ua_company.name  = ?";
+		Query query = em.createNativeQuery(sqlString);
+		query.setParameter(1, name);
+		Object rs = query.getResultList();
+		ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
+		return ow.writeValueAsString(rs);
 	}
 	
 }
